@@ -108,26 +108,38 @@ class _HomeState extends State<Home> {
           children: [
             _buildSectionHeader("Thực đơn", coffeeBrown),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true, // Quan trọng để đặt trong ListView
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.82,
-                mainAxisSpacing: 16.0,
-                crossAxisSpacing: 16.0,
-              ),
-              itemCount: docs.length,
-              itemBuilder: (context, index) {
-                final data = docs[index].data() as Map<String, dynamic>;
-                final product = ProductModel.fromMap(data, id: docs[index].id);
-                return FoodTile(
-                  context,
-                  product.name ?? '',
-                  product.image ?? '',
-                  product.price,
-                  product.description ?? '',
-                  coffeeBrown,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tileWidth = (constraints.maxWidth - 16) / 2;
+                final tileHeight = (tileWidth * 1.7).clamp(260.0, 320.0);
+                final imageHeight = (tileWidth * 0.85).clamp(105.0, 140.0);
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: tileHeight,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                  ),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final product = ProductModel.fromMap(
+                      data,
+                      id: docs[index].id,
+                    );
+                    return FoodTile(
+                      context,
+                      product.name ?? '',
+                      product.image ?? '',
+                      product.price,
+                      product.description ?? '',
+                      coffeeBrown,
+                      imageHeight: imageHeight,
+                    );
+                  },
                 );
               },
             ),
@@ -439,8 +451,9 @@ Widget FoodTile(
   String image,
   dynamic price,
   String description,
-  Color coffeeBrown,
-) {
+  Color coffeeBrown, {
+  required double imageHeight,
+}) {
   return MouseRegion(
     cursor: SystemMouseCursors.click,
     child: GestureDetector(
@@ -476,7 +489,7 @@ Widget FoodTile(
               tag: image,
               child: Container(
                 width: double.infinity,
-                height: 140,
+                height: imageHeight,
                 decoration: const BoxDecoration(
                   color: Color(0xFFf4eee3),
                   borderRadius: BorderRadius.only(

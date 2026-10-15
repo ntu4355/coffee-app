@@ -15,7 +15,7 @@ class WalletService {
   double get balance => balanceNotifier.value;
   List<TransactionModel> get transactions => transactionsNotifier.value;
 
-  Future<void> loadWalletData() async {
+  Future<void> loadWalletData({bool rethrowErrors = false}) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
@@ -46,48 +46,7 @@ class WalletService {
       if (kDebugMode) {
         print('Failed to load wallet data: $e');
       }
-    }
-  }
-
-  Future<void> topupBalance(double amount, {String? description}) async {
-    if (amount <= 0) return;
-
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    final newBalance = balance + amount;
-    balanceNotifier.value = newBalance;
-
-    final transaction = TransactionModel(
-      type: TransactionType.topup,
-      amount: amount,
-      description: description ?? 'Nạp tiền vào ví',
-    );
-
-    // Update balance in Firestore
-    await _firestore.collection('wallets').doc(uid).set({
-      'amount': newBalance,
-    }, SetOptions(merge: true));
-
-    // Add transaction record
-    try {
-      final Map<String, dynamic> data = transaction.toMap();
-      data['createdAt'] = FieldValue.serverTimestamp();
-
-      final docRef = await _firestore
-          .collection('wallets')
-          .doc(uid)
-          .collection('transactions')
-          .add(data);
-      transaction.id = docRef.id;
-
-      final list = List<TransactionModel>.from(transactionsNotifier.value);
-      list.insert(0, transaction);
-      transactionsNotifier.value = list;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to save transaction: $e');
-      }
+      if (rethrowErrors) rethrow;
     }
   }
 

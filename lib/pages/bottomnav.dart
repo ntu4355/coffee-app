@@ -34,39 +34,115 @@ class _BottomNavState extends State<BottomNav> {
   @override
   Widget build(BuildContext context) {
     const coffeeBrown = Color(0xFF6B4F35);
+    const navigationBackground = Color(0xFFFFFCF7);
+    const screenBackground = Color(0xFFf4eee3);
 
     return Scaffold(
-      // IndexedStack giúp giữ trạng thái các trang khi chuyển đổi
-      body: IndexedStack(index: currentIndex, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        selectedItemColor: coffeeBrown,
-        unselectedItemColor: coffeeBrown.withOpacity(0.45),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
-            label: 'Trang chủ',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            label: 'Đơn hàng',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payment_outlined),
-            label: 'Số dư',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Cá nhân',
-          ),
-        ],
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 600;
+            final panelRadius = isWide
+                ? BorderRadius.circular(24)
+                : BorderRadius.zero;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: screenBackground,
+                      borderRadius: panelRadius,
+                      boxShadow: isWide
+                          ? [
+                              BoxShadow(
+                                color: coffeeBrown.withOpacity(0.12),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: panelRadius,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: IndexedStack(
+                              index: currentIndex,
+                              children: pages,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: navigationBackground,
+                              border: Border(
+                                top: BorderSide(
+                                  color: coffeeBrown.withOpacity(0.08),
+                                ),
+                              ),
+                            ),
+                            child: NavigationBar(
+                              height: 68,
+                              selectedIndex: currentIndex,
+                              onDestinationSelected: (index) {
+                                setState(() {
+                                  currentIndex = index;
+                                });
+                              },
+                              backgroundColor: Colors.transparent,
+                              indicatorColor: const Color(0xFFEDE2D2),
+                              indicatorShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              labelBehavior:
+                                  NavigationDestinationLabelBehavior.alwaysShow,
+                              animationDuration: const Duration(
+                                milliseconds: 250,
+                              ),
+                              destinations: const [
+                                NavigationDestination(
+                                  icon: Icon(Icons.home_outlined),
+                                  selectedIcon: Icon(Icons.home_rounded),
+                                  label: 'Trang chủ',
+                                ),
+                                NavigationDestination(
+                                  icon: Icon(Icons.receipt_long_outlined),
+                                  selectedIcon: Icon(
+                                    Icons.receipt_long_rounded,
+                                  ),
+                                  label: 'Đơn hàng',
+                                ),
+                                NavigationDestination(
+                                  icon: Icon(
+                                    Icons.account_balance_wallet_outlined,
+                                  ),
+                                  selectedIcon: Icon(
+                                    Icons.account_balance_wallet_rounded,
+                                  ),
+                                  label: 'Số dư',
+                                ),
+                                NavigationDestination(
+                                  icon: Icon(Icons.person_outline_rounded),
+                                  selectedIcon: Icon(Icons.person_rounded),
+                                  label: 'Cá nhân',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

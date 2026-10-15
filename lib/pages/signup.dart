@@ -1,6 +1,6 @@
 import 'package:coffee_app/service/widget_support.dart';
 import 'package:flutter/material.dart';
-import 'package:coffee_app/service/user_service.dart';
+import 'package:coffee_app/service/registration_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -22,6 +22,13 @@ class _SignUpState extends State<SignUp> {
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
   bool isLoading = false;
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
@@ -137,6 +144,16 @@ class _SignUpState extends State<SignUp> {
                                 });
                               },
                             ),
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 16.0),
                             _buildPasswordField(
                               controller: confirmPasswordController,
@@ -181,6 +198,36 @@ class _SignUpState extends State<SignUp> {
                                         return;
                                       }
 
+                                      if (!RegistrationValidator.isValidEmail(
+                                        email,
+                                      )) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Vui lòng nhập địa chỉ email hợp lệ.',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      final passwordError =
+                                          RegistrationValidator.passwordError(
+                                            password,
+                                          );
+                                      if (passwordError != null) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(passwordError),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
                                       if (password != confirm) {
                                         ScaffoldMessenger.of(
                                           context,
@@ -195,6 +242,11 @@ class _SignUpState extends State<SignUp> {
                                       }
 
                                       setState(() => isLoading = true);
+                                      final focusScope = FocusScope.of(context);
+                                      final navigator = Navigator.of(context);
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
                                       try {
                                         final cred = await FirebaseAuth.instance
                                             .createUserWithEmailAndPassword(
@@ -202,7 +254,13 @@ class _SignUpState extends State<SignUp> {
                                               password: password,
                                             );
                                         final uid = cred.user?.uid;
-                                        if (uid != null) {
+                                        if (uid == null) {
+                                          throw StateError(
+                                            'Firebase không trả về tài khoản vừa tạo.',
+                                          );
+                                        }
+                                        String? profileSaveError;
+                                        try {
                                           await FirebaseFirestore.instance
                                               .collection('users')
                                               .doc(uid)
@@ -214,50 +272,44 @@ class _SignUpState extends State<SignUp> {
                                                 'createdAt':
                                                     FieldValue.serverTimestamp(),
                                               });
-                                          // Đảm bảo dữ liệu đã ghi xong trước khi tải lại
-                                          await UserService.instance
-                                              .loadUserData();
+                                        } on FirebaseException catch (error) {
+                                          profileSaveError =
+                                              error.message ?? error.code;
                                         }
 
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Đăng ký tài khoản thành công!',
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                          Navigator.pushNamedAndRemoveUntil(
-                                            context,
-                                            '/', // Chuyển về root để hiển thị BottomNav
-                                            (route) => false,
-                                          );
-                                        }
-                                      } on FirebaseAuthException catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
+                                        if (!mounted) return;
+                                        focusScope.unfocus();
+                                        navigator.popUntil(
+                                          (route) => route.isFirst,
+                                        );
+                                        messenger.showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              e.message ??
-                                                  'Lỗi khi tạo tài khoản',
+                                              profileSaveError == null
+                                                  ? 'Đăng ký tài khoản thành công!'
+                                                  : 'Tài khoản đã tạo nhưng chưa lưu được hồ sơ: $profileSaveError',
+                                            ),
+                                            backgroundColor:
+                                                profileSaveError == null
+                                                ? Colors.green
+                                                : Colors.deepOrange,
+                                            duration: Duration(
+                                              seconds: profileSaveError == null
+                                                  ? 3
+                                                  : 8,
                                             ),
                                           ),
                                         );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Có lỗi xảy ra'),
-                                          ),
+                                      } on FirebaseAuthException catch (e) {
+                                        _showError(
+                                          e.message ?? 'Lỗi khi tạo tài khoản',
                                         );
+                                      } catch (e) {
+                                        _showError('Có lỗi xảy ra: $e');
                                       } finally {
-                                        if (mounted)
+                                        if (mounted) {
                                           setState(() => isLoading = false);
+                                        }
                                       }
                                     },
                               style: ElevatedButton.styleFrom(

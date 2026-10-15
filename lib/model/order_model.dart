@@ -8,9 +8,9 @@ extension OrderStatusExtension on OrderStatus {
       case OrderStatus.receiving:
         return 'Đang tiếp nhận';
       case OrderStatus.shipping:
-        return 'Đang vận chuyển';
+        return 'Đang giao';
       case OrderStatus.delivered:
-        return 'Đã vận chuyển';
+        return 'Đã giao';
     }
   }
 }

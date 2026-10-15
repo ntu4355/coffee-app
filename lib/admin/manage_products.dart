@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:coffee_app/admin/admin_page_frame.dart';
 import 'package:coffee_app/admin/edit_product.dart';
 import 'package:coffee_app/service/widget_support.dart';
 import 'package:flutter/material.dart';
@@ -94,8 +95,12 @@ class _ManageProductsState extends State<ManageProducts> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  EditProduct(id: docs[index].id, data: data),
+                              builder: (context) => AdminPageFrame(
+                                child: EditProduct(
+                                  id: docs[index].id,
+                                  data: data,
+                                ),
+                              ),
                             ),
                           );
                         },

@@ -1,4 +1,5 @@
 import 'package:coffee_app/admin/admin_home.dart';
+import 'package:coffee_app/admin/admin_page_frame.dart';
 import 'package:coffee_app/admin/add_product.dart';
 import 'package:coffee_app/admin/all_orders.dart';
 import 'package:coffee_app/admin/delivery_history.dart';
@@ -73,36 +74,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFf4eee3),
         useMaterial3: true,
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (snapshot.hasData) {
-            // Người dùng đã đăng nhập. Đảm bảo dữ liệu người dùng được tải.
-            // Sử dụng FutureBuilder để đợi loadUserData hoàn tất trước khi hiển thị Home.
-            return FutureBuilder<void>(
-              future: UserService.instance
-                  .loadUserData(), // Tải hoặc tải lại dữ liệu người dùng
-              builder: (context, userLoadSnapshot) {
-                if (userLoadSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                // Sau khi dữ liệu người dùng đã được tải (hoặc cố gắng tải), hiển thị Home.
-                return const BottomNav();
-              },
-            );
-          }
-          // Nếu chưa đăng nhập, vào trang Login
-          return const LogIn();
-        },
-      ),
+      home: const AuthGate(),
       routes: {
         '/login': (_) => const LogIn(),
         '/signup': (_) => const SignUp(),
@@ -110,13 +82,69 @@ class MyApp extends StatelessWidget {
         '/order': (_) => const OrderPage(),
         '/wallet': (_) => const WalletPage(),
         '/profile': (_) => const ProfilePage(),
-        '/adminlogin': (_) => const AdminLogin(),
-        '/adminhome': (_) => const AdminHome(),
-        '/manage_users': (_) => const ManageUsers(),
-        '/all_orders': (_) => const AllOrders(),
-        '/delivery_history': (_) => const DeliveryHistory(),
-        '/manage_products': (_) => const ManageProducts(),
-        '/add_product': (_) => const AddProduct(),
+        '/adminlogin': (_) => const AdminPageFrame(child: AdminLogin()),
+        '/adminhome': (_) => const AdminPageFrame(child: AdminHome()),
+        '/manage_users': (_) => const AdminPageFrame(child: ManageUsers()),
+        '/all_orders': (_) => const AdminPageFrame(child: AllOrders()),
+        '/delivery_history': (_) =>
+            const AdminPageFrame(child: DeliveryHistory()),
+        '/manage_products': (_) =>
+            const AdminPageFrame(child: ManageProducts()),
+        '/add_product': (_) => const AdminPageFrame(child: AddProduct()),
+      },
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  String? _loadingUid;
+  Future<void>? _userLoadFuture;
+
+  Future<void> _loadUserData(String uid) {
+    if (_loadingUid != uid) {
+      _loadingUid = uid;
+      _userLoadFuture = UserService.instance.loadUserData();
+    }
+    return _userLoadFuture!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final user = snapshot.data;
+        if (user == null) {
+          _loadingUid = null;
+          _userLoadFuture = null;
+          return const LogIn();
+        }
+
+        return FutureBuilder<void>(
+          key: ValueKey(user.uid),
+          future: _loadUserData(user.uid),
+          builder: (context, userLoadSnapshot) {
+            if (userLoadSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return const BottomNav();
+          },
+        );
       },
     );
   }

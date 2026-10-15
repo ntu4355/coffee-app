@@ -1,0 +1,8 @@
+name = "coffee-app-topup-webhook"
+main = "src/index.js"
+compatibility_date = "2026-10-11"
+
+[vars]
+FIREBASE_PROJECT_ID = "coffee-app-77675"
+FIREBASE_API_KEY = "AIzaSyAWAFPWOaNyyWHjTc5JEbZR6G115FnLMOA"
+BANK_ACCOUNT_NUMBER = "0332038511"

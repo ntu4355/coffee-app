@@ -1,5 +1,4 @@
 import 'package:coffee_app/service/widget_support.dart';
-import 'package:coffee_app/service/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -15,6 +14,13 @@ class _LogInState extends State<LogIn> {
   final TextEditingController passwordController = TextEditingController();
   bool obscurePassword = true;
   bool isLoading = false;
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
@@ -177,6 +183,10 @@ class _LogInState extends State<LogIn> {
                                         return;
                                       }
 
+                                      final navigator = Navigator.of(context);
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
                                       setState(() => isLoading = true);
                                       try {
                                         await FirebaseAuth.instance
@@ -184,48 +194,28 @@ class _LogInState extends State<LogIn> {
                                               email: email,
                                               password: password,
                                             );
-                                        // Tải dữ liệu người dùng vào UserService ngay sau khi đăng nhập
-                                        await UserService.instance
-                                            .loadUserData();
-
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Đăng nhập thành công!',
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                          Navigator.pushNamedAndRemoveUntil(
-                                            context,
-                                            '/', // Chuyển về root để hiển thị BottomNav
-                                            (route) => false,
-                                          );
-                                        }
-                                      } on FirebaseAuthException catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
+                                        if (!mounted) return;
+                                        navigator.popUntil(
+                                          (route) => route.isFirst,
+                                        );
+                                        messenger.showSnackBar(
+                                          const SnackBar(
                                             content: Text(
-                                              e.message ?? 'Đăng nhập thất bại',
+                                              'Đăng nhập thành công!',
                                             ),
+                                            backgroundColor: Colors.green,
                                           ),
+                                        );
+                                      } on FirebaseAuthException catch (e) {
+                                        _showError(
+                                          e.message ?? 'Đăng nhập thất bại',
                                         );
                                       } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Có lỗi xảy ra'),
-                                          ),
-                                        );
+                                        _showError('Có lỗi xảy ra: $e');
                                       } finally {
-                                        if (mounted)
+                                        if (mounted) {
                                           setState(() => isLoading = false);
+                                        }
                                       }
                                     },
                               style: ElevatedButton.styleFrom(
