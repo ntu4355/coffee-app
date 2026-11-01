@@ -1,5 +1,7 @@
 # VIDEO DEMO
 video demo là file: VideoDemo.docx
+Hoặc link: https://drive.google.com/file/d/1zPft_KzZr4a8iVlNIzIl4ZraTq5xe6O_/view?usp=sharing
+
 
 # coffee_app
 
