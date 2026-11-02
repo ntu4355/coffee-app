@@ -1,6 +1,7 @@
-# VIDEO DEMO
+# VIDEO DEMO VÀ BÁO CÁO
 video demo là file: VideoDemo.docx
-Hoặc link: https://drive.google.com/file/d/1zPft_KzZr4a8iVlNIzIl4ZraTq5xe6O_/view?usp=sharing
+
+Link drive báo cáo và demo: https://drive.google.com/drive/u/0/folders/1nF4s_v9CdZafN1Sqxa3Mfq0SuVK_wx_7
 
 
 # coffee_app
